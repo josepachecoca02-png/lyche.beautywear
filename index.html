@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyche Beautywear - Sistema Integral de Gestión & POS</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS SDK v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js CDN for Financial Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind Theme Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lyche: {
+                            main: '#D8A0A8',
+                            hover: '#C88D95',
+                            light: '#F3E1E4',
+                            soft: '#FAF3F4',
+                            white: '#FFFFFF',
+                            dark: '#3B3032',
+                            sub: '#827477',
+                            border: '#EBDDE0',
+                            green: '#54836A',
+                            greenBg: '#EAF2ED',
+                            red: '#B85C66',
+                            redBg: '#F8ECED'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FAF3F4;
+            color: #3B3032;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FAF3F4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D8A0A8;
+            border-radius: 4px;
+        }
+
+        .sidebar-item-active {
+            background-color: #F3E1E4;
+            color: #3B3032;
+            font-weight: 700;
+            border-right: 4px solid #D8A0A8;
+        }
+
+        .modal-backdrop {
+            background-color: rgba(59, 48, 50, 0.45);
+            backdrop-filter: blur(5px);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR NAVIGATION (Desktop) -->
+    <aside id="sidebar" class="w-64 bg-white border-r border-lyche-border flex-col justify-between hidden md:flex transition-all duration-300 z-20">
+        <div class="flex flex-col h-full">
+            
+            <!-- Lyche Beautywear Brand Header -->
+            <div class="p-5 border-b border-lyche-border flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-lyche-light flex items-center justify-center text-lyche-main shadow-sm border border-lyche-border">
+                        <i class="fa-solid fa-crown text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-sm tracking-wide text-lyche-dark uppercase leading-tight">LYCHE BEAUTYWEAR</h1>
+                        <p class="text-[10px] text-lyche-sub font-medium">Boutique & Fashion POS</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto py-3 space-y-1 px-2 text-xs font-semibold">
+                <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-dark hover:bg-lyche-soft transition-colors sidebar-item-active">
+                    <i class="fa-solid fa-chart-line w-6 text-lyche-main text-sm"></i>
+                    <span>Dashboard / Inicio</span>
+                </a>
+                <a href="#" onclick="switchTab('inventory')" id="nav-inventory" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-shirt w-6 text-lyche-main text-sm"></i>
+                    <span>Inventario & Variantes</span>
+                </a>
+                <a href="#" onclick="switchTab('pos')" id="nav-pos" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-cash-register w-6 text-lyche-main text-sm"></i>
+                    <span>Ventas POS & Caja</span>
+                </a>
+                <a href="#" onclick="switchTab('customers_cxc')" id="nav-customers_cxc" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-users w-6 text-lyche-main text-sm"></i>
+                    <span>Clientes & Cartera (CXC)</span>
+                </a>
+                <a href="#" onclick="switchTab('suppliers_cxp')" id="nav-suppliers_cxp" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-truck-field w-6 text-lyche-main text-sm"></i>
+                    <span>Proveedores & CXP</span>
+                </a>
+                <a href="#" onclick="switchTab('purchases')" id="nav-purchases" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-boxes-packing w-6 text-lyche-main text-sm"></i>
+                    <span>Compras & Recepción</span>
+                </a>
+                <a href="#" onclick="switchTab('expenses')" id="nav-expenses" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-receipt w-6 text-lyche-main text-sm"></i>
+                    <span>Gastos Operativos</span>
+                </a>
+                <a href="#" onclick="switchTab('banks')" id="nav-banks" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-building-columns w-6 text-lyche-main text-sm"></i>
+                    <span>Caja & Cuentas Bancarias</span>
+                </a>
+                <a href="#" onclick="switchTab('pockets')" id="nav-pockets" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-piggy-bank w-6 text-lyche-main text-sm"></i>
+                    <span>Bolsillos Financieros</span>
+                </a>
+                <a href="#" onclick="switchTab('cashflow_reports')" id="nav-cashflow_reports" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-arrow-trend-up w-6 text-lyche-main text-sm"></i>
+                    <span>Flujo de Caja & Reportes</span>
+                </a>
+                <a href="#" onclick="switchTab('supabase_admin')" id="nav-supabase_admin" class="sidebar-item flex items-center px-3 py-2.5 rounded-xl text-lyche-sub hover:bg-lyche-soft hover:text-lyche-dark transition-colors">
+                    <i class="fa-solid fa-database w-6 text-lyche-main text-sm"></i>
+                    <span>Supabase Cloud & SQL Script</span>
+                </a>
+            </nav>
+
+            <!-- User Session Footer -->
+            <div class="p-3 border-t border-lyche-border bg-lyche-soft/60">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div id="user-avatar" class="w-8 h-8 rounded-full bg-lyche-main text-white flex items-center justify-center font-bold text-xs uppercase">
+                            LB
+                        </div>
+                        <div class="text-[11px] leading-tight">
+                            <p id="user-display-name" class="font-bold text-lyche-dark truncate max-w-[110px]">Administradora</p>
+                            <p id="user-display-email" class="text-lyche-sub text-[10px] truncate max-w-[110px]">Modo Local Demo</p>
+                        </div>
+                    </div>
+                    <button onclick="openAuthModal()" title="Gestionar Sesión / Login Supabase" class="text-lyche-sub hover:text-lyche-dark p-1.5 rounded-lg hover:bg-white transition">
+                        <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MOBILE NAVIGATION OVERLAY MENU -->
+    <div id="mobile-menu" class="fixed inset-0 z-40 bg-black/50 hidden md:hidden" onclick="toggleMobileMenu()">
+        <div class="w-64 bg-white h-full p-4 overflow-y-auto flex flex-col justify-between" onclick="event.stopPropagation()">
+            <div>
+                <div class="flex items-center justify-between border-b border-lyche-border pb-3 mb-3">
+                    <span class="font-bold text-sm text-lyche-dark">LYCHE BEAUTYWEAR</span>
+                    <button onclick="toggleMobileMenu()" class="text-lyche-sub p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <nav id="mobile-nav-items" class="space-y-1 text-xs font-semibold">
+                    <!-- Populated dynamically -->
+                </nav>
+            </div>
+            <div class="pt-4 border-t border-lyche-border text-center">
+                <button onclick="openAuthModal()" class="w-full bg-lyche-main text-white py-2 rounded-xl text-xs font-bold">
+                    Autenticación Supabase
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- HEADER BAR -->
+        <header class="bg-white border-b border-lyche-border px-4 py-3 flex items-center justify-between no-print z-10 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleMobileMenu()" class="md:hidden text-lyche-dark p-2 hover:bg-lyche-soft rounded-lg">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex flex-col">
+                    <span id="current-tab-title" class="text-base font-bold text-lyche-dark">Dashboard / Inicio</span>
+                    <span id="current-datetime" class="text-[11px] text-lyche-sub hidden sm:inline-block">Colombia (COT - Bogotá)</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Mode Badge Indicator -->
+                <div id="connection-badge" onclick="toggleConnectionMode()" class="cursor-pointer flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-lyche-light text-lyche-dark border border-lyche-border transition hover:opacity-80">
+                    <span id="connection-dot" class="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                    <span id="connection-text">Modo Local Demo</span>
+                </div>
+
+                <!-- Quick POS Trigger -->
+                <button onclick="switchTab('pos')" class="bg-lyche-main hover:bg-lyche-hover text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
+                    <i class="fa-solid fa-bolt text-xs"></i>
+                    <span class="hidden sm:inline">Nueva Venta</span>
+                </button>
+
+                <!-- Reset Demo Data Button -->
+                <button onclick="confirmResetData()" title="Restablecer Datos de Demostración" class="p-2 text-lyche-sub hover:text-lyche-dark hover:bg-lyche-soft rounded-xl transition">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN DYNAMIC CONTENT DISPLAY AREA -->
+        <main id="main-content" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            <!-- Dynamic Tab Layout Injected Here -->
+        </main>
+    </div>
+
+    <!-- GLOBAL MODAL CONTAINER -->
+    <div id="modal-container" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative border border-lyche-border">
+            <!-- Modal Body Injected Dynamically -->
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- PRINTABLE RECEIPT TEMPLATE (Hidden) -->
+    <div id="printable-receipt" class="print-only p-4 font-mono text-xs max-w-xs mx-auto">
+        <!-- Injected via JS for sales printing -->
+    </div>
+
+    <!-- MAIN JAVASCRIPT APP ARCHITECTURE -->
+    <script>
+        /**
+         * LYCHE BEAUTYWEAR - INTEGRAL BOUTIQUE SYSTEM
+         * Dual Mode Engine: Supabase Cloud Integration + LocalStorage Offline Persistence.
+         */
+
+        // 1. SUPABASE CONFIGURATION
+        const SUPABASE_URL = "https://zpgioiwytypqdfpvngtx.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_ppMMkybxiKcbjyqy9jGPVw_lVMeqapB";
+        
+        let supabaseClient = null;
+        try {
+            if (window.supabase && window.supabase.createClient) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (err) {
+            console.warn("Supabase init fallback:", err);
+        }
+
+        // 2. DEFAULT SEED DATA FOR LYCHE BEAUTYWEAR BOUTIQUE
+        const DEFAULT_SEED_DATA = {
+            products: [
+                {
+                    id: 'PROD-101',
+                    ref: 'VEST-ROSA-01',
+                    name: 'Vestido Seda Rosé Gala',
+                    category: 'Vestidos',
+                    brand: 'Lyche Beautywear',
+                    supplierId: 'SUP-001',
+                    cost: 65000,
+                    price: 145000,
+                    minStock: 4,
+                    location: 'RACK A1 - Exhibición',
+                    variants: [
+                        { id: 'VAR-101-S', size: 'S', color: 'Palo Rosa', stock: 6, cost: 65000, price: 145000 },
+                        { id: 'VAR-101-M', size: 'M', color: 'Palo Rosa', stock: 10, cost: 65000, price: 145000 },
+                        { id: 'VAR-101-L', size: 'L', color: 'Blanco Perla', stock: 2, cost: 65000, price: 145000 }
+                    ]
+                },
+                {
+                    id: 'PROD-102',
+                    ref: 'BLU-LINO-02',
+                    name: 'Blusa Lino Mangas Abombadas',
+                    category: 'Blusas',
+                    brand: 'Lyche Beautywear',
+                    supplierId: 'SUP-001',
+                    cost: 38000,
+                    price: 89000,
+                    minStock: 5,
+                    location: 'Estante B2',
+                    variants: [
+                        { id: 'VAR-102-XS', size: 'XS', color: 'Blanco', stock: 4, cost: 38000, price: 89000 },
+                        { id: 'VAR-102-S', size: 'S', color: 'Palo Rosa', stock: 8, cost: 38000, price: 89000 },
+                        { id: 'VAR-102-M', size: 'M', color: 'Marfil', stock: 3, cost: 38000, price: 89000 }
+                    ]
+                },
+                {
+                    id: 'PROD-103',
+                    ref: 'PAN-PALAZ-03',
+                    name: 'Pantalón Palazo Tiro Alto Elegante',
+                    category: 'Pantalones',
+                    brand: 'Lyche Atelier',
+                    supplierId: 'SUP-002',
+                    cost: 52000,
+                    price: 120000,
+                    minStock: 4,
+                    location: 'RACK B1',
+                    variants: [
+                        { id: 'VAR-103-S', size: 'S', color: 'Negro', stock: 5, cost: 52000, price: 120000 },
+                        { id: 'VAR-103-M', size: 'M', color: 'Beige', stock: 7, cost: 52000, price: 120000 },
+                        { id: 'VAR-103-L', size: 'L', color: 'Palo Rosa', stock: 1, cost: 52000, price: 120000 }
+                    ]
+                },
+                {
+                    id: 'PROD-104',
+                    ref: 'CONJ-SHORTS-04',
+                    name: 'Conjunto Blazer & Short Lino',
+                    category: 'Conjuntos',
+                    brand: 'Lyche Beautywear',
+                    supplierId: 'SUP-002',
+                    cost: 82000,
+                    price: 185000,
+                    minStock: 3,
+                    location: 'Exhibición Maniquí',
+                    variants: [
+                        { id: 'VAR-104-S', size: 'S', color: 'Rosa Pastel', stock: 3, cost: 82000, price: 185000 },
+                        { id: 'VAR-104-M', size: 'M', color: 'Blanco', stock: 4, cost: 82000, price: 185000 }
+                    ]
+                }
+            ],
+            customers: [
+                { id: 'CLI-001', name: 'Carolina Restrepo', phone: '300 123 4567', idNumber: '1017234890', address: 'El Poblado, Medellín', notes: 'Cliente Frecuente' },
+                { id: 'CLI-002', name: 'Laura Daniela Gómez', phone: '312 987 6543', idNumber: '1036452109', address: 'La Laureles, Medellín', notes: 'Prefiere pagos por Nequi' },
+                { id: 'CLI-003', name: 'Mariana Villa', phone: '315 456 7890', idNumber: '987654321', address: 'Envigado', notes: 'Compra mayorista boutique' }
+            ],
+            suppliers: [
+                { id: 'SUP-001', name: 'Textiles & Confecciones Moda SAS', nit: '900.123.456-1', phone: '310 555 1234', contact: 'Carlos Mario Duque', address: 'Itagüí, Antioquia' },
+                { id: 'SUP-002', name: 'Atelier Hilos & Diseños Colombia', nit: '800.987.654-3', phone: '320 444 8899', contact: 'Diana Hoyos', address: 'Bogotá DC' }
+            ],
+            accounts: [
+                { id: 'ACC-001', name: 'Caja Física Principal', type: 'EFECTIVO', balance: 650000 },
+                { id: 'ACC-002', name: 'Bancolombia Empresarial', type: 'BANCO', balance: 4250000 },
+                { id: 'ACC-003', name: 'Nequi Lyche Beautywear', type: 'DIGITAL', balance: 1120000 },
+                { id: 'ACC-004', name: 'Daviplata Boutique', type: 'DIGITAL', balance: 480000 }
+            ],
+            pockets: [
+                { id: 'POC-001', name: 'Reserva Reposición Inventario', target: 2500000, balance: 1800000, notes: 'Para nueva colección de temporada' },
+                { id: 'POC-002', name: 'Fondo Arriendo Local', target: 2000000, balance: 2000000, notes: 'Pago garantizado día 30 del mes' },
+                { id: 'POC-003', name: 'Provisiones Impuestos & Dian', target: 1000000, balance: 500000, notes: 'Ahorro para IVA y Retenciones' }
+            ],
+            sales: [
+                {
+                    id: 'VEN-2001',
+                    consecutive: 2001,
+                    date: '2026-10-21T10:30:00',
+                    customerId: 'CLI-001',
+                    items: [
+                        { productId: 'PROD-101', variantId: 'VAR-101-S', name: 'Vestido Seda Rosé Gala (S - Palo Rosa)', qty: 1, unitPrice: 145000, unitCost: 65000, total: 145000 }
+                    ],
+                    subtotal: 145000,
+                    discount: 0,
+                    total: 145000,
+                    totalCost: 65000,
+                    profit: 80000,
+                    paymentMethod: 'Nequi',
+                    paymentStatus: 'PAGADO',
+                    paidAmount: 145000,
+                    balance: 0,
+                    notes: 'Venta presencial'
+                },
+                {
+                    id: 'VEN-2002',
+                    consecutive: 2002,
+                    date: '2026-10-22T09:15:00',
+                    customerId: 'CLI-003',
+                    items: [
+                        { productId: 'PROD-104', variantId: 'VAR-104-S', name: 'Conjunto Blazer & Short Lino (S - Rosa)', qty: 1, unitPrice: 185000, unitCost: 82000, total: 185000 }
+                    ],
+                    subtotal: 185000,
+                    discount: 10000,
+                    total: 175000,
+                    totalCost: 82000,
+                    profit: 93000,
+                    paymentMethod: 'Crédito/Abono',
+                    paymentStatus: 'CREDITO',
+                    paidAmount: 75000,
+                    balance: 100000,
+                    notes: 'Abonó $75.000 de contado, saldo quincenal'
+                }
+            ],
+            customerPayments: [
+                { id: 'ABO-101', saleId: 'VEN-2002', customerId: 'CLI-003', date: '2026-10-22T09:15:00', amount: 75000, method: 'Efectivo', accountId: 'ACC-001', notes: 'Abono inicial venta #2002' }
+            ],
+            purchases: [
+                {
+                    id: 'COM-101',
+                    supplierId: 'SUP-001',
+                    docRef: 'FAC-7892',
+                    date: '2026-10-15T14:00:00',
+                    total: 1500000,
+                    paidAmount: 1000000,
+                    balance: 500000,
+                    status: 'CREDITO_PARCIAL'
+                }
+            ],
+            supplierPayments: [],
+            expenses: [
+                { id: 'GAS-101', category: 'Arriendo', description: 'Arriendo mensual Local Boutique', amount: 2000000, date: '2026-10-01T09:00:00', method: 'Bancolombia', accountId: 'ACC-002' },
+                { id: 'GAS-102', category: 'Empaques', description: 'Bolsas de tela personalizadas Lyche', amount: 320000, date: '2026-10-08T16:30:00', method: 'Efectivo', accountId: 'ACC-001' }
+            ],
+            inventoryMovements: []
+        };
+
+        // 3. PERSISTENT LOCAL STORAGE STORE
+        class Store {
+            constructor() {
+                this.load();
+            }
+
+            load() {
+                const stored = localStorage.getItem('lyche_beautywear_db');
+                if (stored) {
+                    try {
+                        this.data = JSON.parse(stored);
+                    } catch (e) {
+                        this.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+                        this.save();
+                    }
+                } else {
+                    this.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+                    this.save();
+                }
+            }
+
+            save() {
+                localStorage.setItem('lyche_beautywear_db', JSON.stringify(this.data));
+            }
+
+            reset() {
+                this.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+                this.save();
+            }
+        }
+
+        const DB = new Store();
+        let currentTab = 'dashboard';
+        let appMode = 'demo'; // 'demo' or 'supabase'
+        let currentUser = null;
+        let chartInstances = {};
+
+        // 4. FORMATTING UTILITIES (COLOMBIA COP & BOGOTA TIMEZONE)
+        function formatCOP(amount) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount || 0) + ' COP';
+        }
+
+        function formatDate(isoStr) {
+            if (!isoStr) return 'N/A';
+            const date = new Date(isoStr);
+            return date.toLocaleDateString('es-CO', {
+                timeZone: 'America/Bogota',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-700' : type === 'error' ? 'bg-lyche-red' : 'bg-lyche-dark';
+            
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-2xl shadow-lg flex items-center space-x-3 pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0 text-xs font-semibold`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'} text-base"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function openModal(title, bodyHtml) {
+            const container = document.getElementById('modal-container');
+            const content = document.getElementById('modal-content');
+
+            content.innerHTML = `
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-lyche-border">
+                    <h3 class="text-base font-bold text-lyche-dark">${title}</h3>
+                    <button onclick="closeModal()" class="text-lyche-sub hover:text-lyche-dark p-1 rounded-lg">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div>${bodyHtml}</div>
+            `;
+
+            container.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function confirmResetData() {
+            if (window.confirm("¿Desea restablecer todos los datos de demostración de Lyche Beautywear?")) {
+                DB.reset();
+                showToast("Datos restablecidos correctamente", "success");
+                renderCurrentTab();
+            }
+        }
+
+        function toggleConnectionMode() {
+            if (appMode === 'demo') {
+                openAuthModal();
+            } else {
+                appMode = 'demo';
+                updateConnectionBadge();
+                showToast("Cambiado a Modo Demo Local", "info");
+                renderCurrentTab();
+            }
+        }
+
+        function updateConnectionBadge() {
+            const dot = document.getElementById('connection-dot');
+            const text = document.getElementById('connection-text');
+            const emailLbl = document.getElementById('user-display-email');
+            const nameLbl = document.getElementById('user-display-name');
+
+            if (appMode === 'supabase' && currentUser) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse";
+                text.innerText = "Supabase Nube";
+                emailLbl.innerText = currentUser.email;
+                nameLbl.innerText = "Usuario Supabase";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse";
+                text.innerText = "Modo Local Demo";
+                emailLbl.innerText = "Modo Local Offline";
+                nameLbl.innerText = "Administradora";
+            }
+        }
+
+        // 5. NAVIGATION SWITCHER
+        function switchTab(tabId) {
+            currentTab = tabId;
+            
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('sidebar-item-active', 'text-lyche-dark', 'font-bold');
+                item.classList.add('text-lyche-sub');
+            });
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('sidebar-item-active', 'text-lyche-dark');
+                activeNav.classList.remove('text-lyche-sub');
+            }
+
+            const titles = {
+                dashboard: 'Dashboard / Inicio',
+                inventory: 'Inventario & Control de Variantes',
+                pos: 'Ventas POS & Caja Registradora',
+                customers_cxc: 'Clientes & Cartera por Cobrar (CXC)',
+                suppliers_cxp: 'Proveedores & Cuentas por Pagar (CXP)',
+                purchases: 'Compras & Recepción de Mercancía',
+                expenses: 'Gastos Operativos',
+                banks: 'Caja & Cuentas Bancarias',
+                pockets: 'Bolsillos Financieros de Reserva',
+                cashflow_reports: 'Flujo de Caja & Reportes',
+                supabase_admin: 'Supabase Cloud & Script SQL PostgreSQL'
+            };
+
+            document.getElementById('current-tab-title').innerText = titles[tabId] || 'Lyche Beautywear';
+            
+            // Build mobile menu items on demand
+            const mobNav = document.getElementById('mobile-nav-items');
+            if (mobNav) {
+                mobNav.innerHTML = Object.keys(titles).map(key => `
+                    <a href="#" onclick="switchTab('${key}'); toggleMobileMenu();" class="block py-2 px-3 rounded-lg ${currentTab === key ? 'bg-lyche-light font-bold text-lyche-dark' : 'text-lyche-sub'}">
+                        ${titles[key]}
+                    </a>
+                `).join('');
+            }
+
+            renderCurrentTab();
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        // TAB ROUTER
+        function renderCurrentTab() {
+            const main = document.getElementById('main-content');
+            
+            // Destroy active charts before replacing DOM
+            Object.keys(chartInstances).forEach(key => {
+                if (chartInstances[key]) {
+                    chartInstances[key].destroy();
+                    delete chartInstances[key];
+                }
+            });
+
+            switch (currentTab) {
+                case 'dashboard':
+                    renderDashboard(main);
+                    break;
+                case 'inventory':
+                    renderInventory(main);
+                    break;
+                case 'pos':
+                    renderPOS(main);
+                    break;
+                case 'customers_cxc':
+                    renderCustomersCXC(main);
+                    break;
+                case 'suppliers_cxp':
+                    renderSuppliersCXP(main);
+                    break;
+                case 'purchases':
+                    renderPurchases(main);
+                    break;
+                case 'expenses':
+                    renderExpenses(main);
+                    break;
+                case 'banks':
+                    renderBanks(main);
+                    break;
+                case 'pockets':
+                    renderPockets(main);
+                    break;
+                case 'cashflow_reports':
+                    renderCashFlowReports(main);
+                    break;
+                case 'supabase_admin':
+                    renderSupabaseAdmin(main);
+                    break;
+                default:
+                    renderDashboard(main);
+            }
+        }
+
+        /* ==========================================================================
+           MODULE 1: DASHBOARD & CHART.JS ANALYTICS
+           ========================================================================== */
+        function renderDashboard(container) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            
+            let salesToday = 0;
+            let salesMonth = 0;
+            let profitMonth = 0;
+
+            DB.data.sales.forEach(s => {
+                if (s.date.slice(0, 10) === todayStr) salesToday += s.total;
+                salesMonth += s.total;
+                profitMonth += (s.profit || 0);
+            });
+
+            let invCost = 0;
+            let invPotential = 0;
+            let lowStockCount = 0;
+
+            DB.data.products.forEach(p => {
+                p.variants.forEach(v => {
+                    invCost += (v.stock * v.cost);
+                    invPotential += (v.stock * v.price);
+                    if (v.stock <= p.minStock) lowStockCount++;
+                });
+            });
+
+            let totalCashAndBanks = DB.data.accounts.reduce((sum, a) => sum + a.balance, 0);
+            let totalExpenses = DB.data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            let totalCXC = DB.data.sales.reduce((sum, s) => sum + (s.balance || 0), 0);
+            let totalCXP = DB.data.purchases.reduce((sum, p) => sum + (p.balance || 0), 0);
+
+            container.innerHTML = `
+                <!-- Main KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-lyche-sub uppercase tracking-wider">Ventas de Hoy</p>
+                            <h3 class="text-lg font-extrabold text-lyche-dark mt-1">${formatCOP(salesToday)}</h3>
+                            <p class="text-[10px] text-lyche-green font-semibold mt-1"><i class="fa-solid fa-circle-check mr-1"></i>En tiempo real</p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-lyche-light flex items-center justify-center text-lyche-main text-lg">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-lyche-sub uppercase tracking-wider">Ventas del Mes</p>
+                            <h3 class="text-lg font-extrabold text-lyche-dark mt-1">${formatCOP(salesMonth)}</h3>
+                            <p class="text-[10px] text-lyche-sub font-semibold mt-1">Utilidad: <span class="text-lyche-green font-bold">${formatCOP(profitMonth)}</span></p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-lyche-soft flex items-center justify-center text-lyche-main text-lg">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-lyche-sub uppercase tracking-wider">Dinero Disponible</p>
+                            <h3 class="text-lg font-extrabold text-lyche-dark mt-1">${formatCOP(totalCashAndBanks)}</h3>
+                            <p class="text-[10px] text-lyche-sub font-semibold mt-1">Caja + Bancos + Nequi</p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 text-lg">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-lyche-sub uppercase tracking-wider">Costo Inventario</p>
+                            <h3 class="text-lg font-extrabold text-lyche-dark mt-1">${formatCOP(invCost)}</h3>
+                            <p class="text-[10px] text-lyche-sub font-semibold mt-1">Potencial: <span class="font-bold">${formatCOP(invPotential)}</span></p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center text-lyche-red text-lg">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Metrics -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-3.5 rounded-xl border border-lyche-border flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] text-lyche-sub">Cartera (CXC)</span>
+                            <p class="text-sm font-bold text-lyche-dark">${formatCOP(totalCXC)}</p>
+                        </div>
+                        <i class="fa-solid fa-hand-holding-dollar text-lyche-main"></i>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-lyche-border flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] text-lyche-sub">Cuentas x Pagar (CXP)</span>
+                            <p class="text-sm font-bold text-lyche-dark">${formatCOP(totalCXP)}</p>
+                        </div>
+                        <i class="fa-solid fa-file-invoice-dollar text-lyche-red"></i>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-lyche-border flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] text-lyche-sub">Gastos Totales</span>
+                            <p class="text-sm font-bold text-lyche-dark">${formatCOP(totalExpenses)}</p>
+                        </div>
+                        <i class="fa-solid fa-receipt text-lyche-sub"></i>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-lyche-border flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] text-lyche-sub">Stock Bajo en Prendas</span>
+                            <p class="text-sm font-bold ${lowStockCount > 0 ? 'text-lyche-red' : 'text-lyche-green'}">${lowStockCount} variantes</p>
+                        </div>
+                        <i class="fa-solid fa-triangle-exclamation ${lowStockCount > 0 ? 'text-lyche-red' : 'text-lyche-green'}"></i>
+                    </div>
+                </div>
+
+                <!-- Chart.js Graphs Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-2xl border border-lyche-border lg:col-span-2 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-lyche-dark text-sm">Ventas e Ingresos vs Gastos</h4>
+                            <span class="text-[10px] text-lyche-sub">Análisis Gráfico</span>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="chart-income-expenses"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-lyche-border space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-lyche-dark text-sm">Distribución por Categoría</h4>
+                        </div>
+                        <div class="h-56 relative flex items-center justify-center">
+                            <canvas id="chart-categories"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Initialize Charts using Chart.js
+            setTimeout(() => {
+                const ctx1 = document.getElementById('chart-income-expenses');
+                if (ctx1) {
+                    chartInstances['income_expenses'] = new Chart(ctx1, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana Actual'],
+                            datasets: [
+                                { label: 'Ventas Totales', data: [850000, 1200000, 950000, salesMonth], backgroundColor: '#D8A0A8', borderRadius: 6 },
+                                { label: 'Gastos Operativos', data: [300000, 450000, 200000, totalExpenses], backgroundColor: '#B85C66', borderRadius: 6 }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+
+                const ctx2 = document.getElementById('chart-categories');
+                if (ctx2) {
+                    chartInstances['categories'] = new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Vestidos', 'Blusas', 'Pantalones', 'Conjuntos'],
+                            datasets: [{
+                                data: [40, 30, 20, 10],
+                                backgroundColor: ['#D8A0A8', '#F3E1E4', '#827477', '#54836A']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+            }, 100);
+        }
+
+        /* ==========================================================================
+           MODULE 2: INVENTORY & VARIANTS
+           ========================================================================== */
+        function renderInventory(container) {
+            container.innerHTML = `
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-lyche-border">
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-lyche-sub text-xs"></i>
+                            <input type="text" id="inv-search" oninput="filterInventory()" placeholder="Buscar prenda o SKU..." class="w-full pl-9 pr-3 py-2 bg-lyche-soft border border-lyche-border rounded-xl text-xs focus:outline-none">
+                        </div>
+                        <select id="inv-cat" onchange="filterInventory()" class="bg-lyche-soft border border-lyche-border rounded-xl px-3 py-2 text-xs text-lyche-dark">
+                            <option value="">Todas las Categorías</option>
+                            <option value="Vestidos">Vestidos</option>
+                            <option value="Blusas">Blusas</option>
+                            <option value="Pantalones">Pantalones</option>
+                            <option value="Conjuntos">Conjuntos</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <button onclick="exportInventoryCSV()" class="bg-lyche-soft border border-lyche-border text-lyche-dark hover:bg-lyche-light px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <button onclick="openNewProductModal()" class="bg-lyche-main hover:bg-lyche-hover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Nueva Prenda</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-lyche-dark">
+                            <thead class="bg-lyche-soft border-b border-lyche-border text-lyche-sub font-semibold uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-3">Ref / SKU</th>
+                                    <th class="p-3">Prenda & Marca</th>
+                                    <th class="p-3">Categoría</th>
+                                    <th class="p-3">Costo Base</th>
+                                    <th class="p-3">Precio Venta</th>
+                                    <th class="p-3">Variantes (Talla/Color/Stock)</th>
+                                    <th class="p-3 text-center">Stock Total</th>
+                                    <th class="p-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-tbody" class="divide-y divide-lyche-border">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            renderInventoryRows(DB.data.products);
+        }
+
+        function renderInventoryRows(products) {
+            const tbody = document.getElementById('inventory-tbody');
+            if (!tbody) return;
+
+            if (products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-lyche-sub">No se encontraron prendas registradas.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = products.map(p => {
+                const totalStock = p.variants.reduce((sum, v) => sum + v.stock, 0);
+                const isLow = totalStock <= p.minStock;
+
+                return `
+                    <tr class="hover:bg-lyche-soft/40 transition-colors">
+                        <td class="p-3 font-mono font-semibold text-lyche-main">${p.ref}</td>
+                        <td class="p-3 font-bold text-lyche-dark">${p.name}<br><span class="text-[10px] text-lyche-sub font-normal">${p.brand}</span></td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-lyche-light text-lyche-dark text-[10px] font-medium">${p.category}</span></td>
+                        <td class="p-3 text-lyche-sub">${formatCOP(p.cost)}</td>
+                        <td class="p-3 font-bold text-lyche-dark">${formatCOP(p.price)}</td>
+                        <td class="p-3">
+                            <div class="flex flex-wrap gap-1">
+                                ${p.variants.map(v => `
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border text-[9px] ${v.stock <= 2 ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-lyche-border bg-white text-lyche-dark'}">
+                                        <strong>${v.size}</strong>-${v.color}: <span class="ml-1 font-bold">${v.stock}</span>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isLow ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
+                                ${totalStock} un.
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="editProductModal('${p.id}')" title="Editar Prenda" class="p-1.5 text-lyche-sub hover:text-lyche-dark hover:bg-lyche-soft rounded-lg">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterInventory() {
+            const query = document.getElementById('inv-search').value.toLowerCase();
+            const cat = document.getElementById('inv-cat').value;
+
+            const filtered = DB.data.products.filter(p => {
+                const mQ = p.name.toLowerCase().includes(query) || p.ref.toLowerCase().includes(query);
+                const mC = cat === '' || p.category === cat;
+                return mQ && mC;
+            });
+
+            renderInventoryRows(filtered);
+        }
+
+        function openNewProductModal() {
+            openModal("Registrar Nueva Prenda - Lyche Beautywear", `
+                <form onsubmit="saveProduct(event)" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Referencia / SKU *</label>
+                            <input type="text" id="p-ref" required placeholder="Ej. VEST-GALA-05" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Nombre de Prenda *</label>
+                            <input type="text" id="p-name" required placeholder="Ej. Vestido Satinado Noche" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Categoría *</label>
+                            <select id="p-cat" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                                <option value="Vestidos">Vestidos</option>
+                                <option value="Blusas">Blusas</option>
+                                <option value="Pantalones">Pantalones</option>
+                                <option value="Conjuntos">Conjuntos</option>
+                                <option value="Accesorios">Accesorios</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Costo Base (COP) *</label>
+                            <input type="number" id="p-cost" required min="0" placeholder="45000" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Precio Venta (COP) *</label>
+                            <input type="number" id="p-price" required min="0" placeholder="110000" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-lyche-border pt-3">
+                        <label class="block font-bold text-lyche-dark mb-2">Variantes (Tallas & Colores)</label>
+                        <div id="variant-rows" class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" placeholder="Talla (S, M, L)" class="v-size w-1/3 p-2 border rounded-lg" value="S">
+                                <input type="text" placeholder="Color" class="v-color w-1/3 p-2 border rounded-lg" value="Palo Rosa">
+                                <input type="number" placeholder="Stock" class="v-stock w-1/3 p-2 border rounded-lg" value="5">
+                            </div>
+                        </div>
+                        <button type="button" onclick="addVariantInputRow()" class="mt-2 text-lyche-main font-bold hover:underline">+ Agregar variante</button>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t border-lyche-border">
+                        <button type="button" onclick="closeModal()" class="px-3 py-1.5 border rounded-xl">Cancelar</button>
+                        <button type="submit" class="px-4 py-1.5 bg-lyche-main text-white font-bold rounded-xl">Guardar Prenda</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function addVariantInputRow() {
+            const container = document.getElementById('variant-rows');
+            const row = document.createElement('div');
+            row.className = 'flex items-center space-x-2';
+            row.innerHTML = `
+                <input type="text" placeholder="Talla (S, M, L)" class="v-size w-1/3 p-2 border rounded-lg" value="M">
+                <input type="text" placeholder="Color" class="v-color w-1/3 p-2 border rounded-lg" value="Blanco">
+                <input type="number" placeholder="Stock" class="v-stock w-1/3 p-2 border rounded-lg" value="3">
+            `;
+            container.appendChild(row);
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const ref = document.getElementById('p-ref').value;
+            const name = document.getElementById('p-name').value;
+            const category = document.getElementById('p-cat').value;
+            const cost = parseFloat(document.getElementById('p-cost').value) || 0;
+            const price = parseFloat(document.getElementById('p-price').value) || 0;
+
+            const sizes = document.querySelectorAll('.v-size');
+            const colors = document.querySelectorAll('.v-color');
+            const stocks = document.querySelectorAll('.v-stock');
+
+            const variants = [];
+            sizes.forEach((sIn, i) => {
+                variants.push({
+                    id: 'VAR-' + Date.now() + '-' + i,
+                    size: sIn.value || 'S',
+                    color: colors[i].value || 'Estándar',
+                    stock: parseInt(stocks[i].value) || 0,
+                    cost: cost,
+                    price: price
+                });
+            });
+
+            DB.data.products.push({
+                id: 'PROD-' + Date.now(),
+                ref, name, category, brand: 'Lyche Beautywear', supplierId: 'SUP-001',
+                cost, price, minStock: 3, location: 'Boutique', variants
+            });
+
+            DB.save();
+            closeModal();
+            showToast("Prenda registrada correctamente", "success");
+            renderInventory(document.getElementById('main-content'));
+        }
+
+        function exportInventoryCSV() {
+            let csv = "SKU,Nombre,Categoria,Costo,Precio,Talla,Color,Stock\n";
+            DB.data.products.forEach(p => {
+                p.variants.forEach(v => {
+                    csv += `"${p.ref}","${p.name}","${p.category}",${p.cost},${p.price},"${v.size}","${v.color}",${v.stock}\n`;
+                });
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Lyche_Inventario_${new Date().toISOString().slice(0,10)}.csv`);
+            a.click();
+        }
+
+        /* ==========================================================================
+           MODULE 3: POS SALES & THERMAL RECEIPTS
+           ========================================================================== */
+        let posCart = [];
+
+        function renderPOS(container) {
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <!-- Products Catalog Selection -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-white p-4 rounded-2xl border border-lyche-border flex items-center space-x-3">
+                            <i class="fa-solid fa-magnifying-glass text-lyche-sub"></i>
+                            <input type="text" id="pos-search" oninput="filterPOSGrid()" placeholder="Buscar prenda por nombre o SKU para vender..." class="w-full bg-transparent text-xs text-lyche-dark focus:outline-none">
+                        </div>
+
+                        <div id="pos-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+                            <!-- Injected POS cards -->
+                        </div>
+                    </div>
+
+                    <!-- Cart Billing Sidebar -->
+                    <div class="bg-white p-5 rounded-2xl border border-lyche-border flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between border-b border-lyche-border pb-3 mb-3">
+                                <h3 class="font-bold text-lyche-dark text-base"><i class="fa-solid fa-receipt text-lyche-main mr-1"></i> Carrito de Venta</h3>
+                                <button onclick="clearPOSCart()" class="text-xs text-lyche-red hover:underline">Vaciar</button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="block text-[11px] font-bold text-lyche-sub mb-1">Cliente Selección</label>
+                                <select id="pos-customer" class="w-full p-2 border border-lyche-border rounded-xl bg-lyche-soft text-xs">
+                                    <option value="">Cliente de Contado (General)</option>
+                                    ${DB.data.customers.map(c => `<option value="${c.id}">${c.name} - ${c.phone}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <div id="pos-cart-list" class="space-y-2 max-h-48 overflow-y-auto my-2 divide-y divide-lyche-border/40">
+                                <p class="text-center text-xs text-lyche-sub py-6">Selecciona variantes para agregar al carrito.</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-lyche-border pt-3 space-y-2 text-xs">
+                            <div class="flex justify-between text-lyche-sub">
+                                <span>Subtotal:</span>
+                                <span id="pos-subtotal" class="font-semibold text-lyche-dark">$ 0 COP</span>
+                            </div>
+                            <div class="flex justify-between text-lyche-sub">
+                                <span>Descuento:</span>
+                                <input type="number" id="pos-discount" oninput="updatePOSTotals()" value="0" min="0" class="w-20 text-right p-1 border rounded bg-lyche-soft text-xs">
+                            </div>
+                            <div class="flex justify-between text-base font-bold text-lyche-dark border-t border-lyche-border pt-2">
+                                <span>TOTAL:</span>
+                                <span id="pos-total" class="text-lyche-main font-extrabold text-base">$ 0 COP</span>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="block font-bold text-lyche-dark text-[11px] mb-1">Método de Pago</label>
+                                <select id="pos-method" class="w-full p-2 border border-lyche-border rounded-xl bg-lyche-soft text-xs font-semibold">
+                                    <option value="Efectivo">Efectivo (Caja Física)</option>
+                                    <option value="Nequi">Nequi Lyche Beautywear</option>
+                                    <option value="Bancolombia">Bancolombia QR / Transf</option>
+                                    <option value="Daviplata">Daviplata</option>
+                                    <option value="Tarjeta">Tarjeta / Datáfono</option>
+                                    <option value="Crédito/Abono">Crédito Boutique (Cartera/Fiado)</option>
+                                </select>
+                            </div>
+
+                            <button onclick="confirmSaleProcess()" class="w-full bg-lyche-main hover:bg-lyche-hover text-white py-3 rounded-xl font-bold text-xs shadow-md transition mt-2 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Procesar Venta & Imprimir</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderPOSGrid(DB.data.products);
+        }
+
+        function renderPOSGrid(products) {
+            const grid = document.getElementById('pos-grid');
+            if (!grid) return;
+
+            grid.innerHTML = products.map(p => `
+                <div class="bg-white p-3 rounded-xl border border-lyche-border hover:border-lyche-main transition space-y-2 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono text-lyche-main">${p.ref}</span>
+                            <span class="text-[9px] font-bold bg-lyche-soft px-1.5 py-0.5 rounded text-lyche-sub">${p.category}</span>
+                        </div>
+                        <h5 class="font-bold text-xs text-lyche-dark mt-1 line-clamp-1">${p.name}</h5>
+                        <p class="font-extrabold text-lyche-dark text-xs mt-0.5">${formatCOP(p.price)}</p>
+                    </div>
+
+                    <div class="space-y-1 pt-2 border-t border-lyche-border/50">
+                        <p class="text-[10px] font-semibold text-lyche-sub">Tallas & Colores:</p>
+                        <div class="flex flex-wrap gap-1">
+                            ${p.variants.map(v => `
+                                <button onclick="addVariantToPOSCart('${p.id}', '${v.id}')" ${v.stock <= 0 ? 'disabled' : ''} class="px-2 py-1 rounded text-[10px] font-bold border ${v.stock <= 0 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-lyche-soft text-lyche-dark border-lyche-border hover:bg-lyche-light'}">
+                                    ${v.size}-${v.color} (${v.stock})
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterPOSGrid() {
+            const query = document.getElementById('pos-search').value.toLowerCase();
+            const filtered = DB.data.products.filter(p => p.name.toLowerCase().includes(query) || p.ref.toLowerCase().includes(query));
+            renderPOSGrid(filtered);
+        }
+
+        function addVariantToPOSCart(productId, variantId) {
+            const product = DB.data.products.find(p => p.id === productId);
+            if (!product) return;
+            const variant = product.variants.find(v => v.id === variantId);
+            if (!variant || variant.stock <= 0) return;
+
+            const existing = posCart.find(item => item.variantId === variantId);
+            if (existing) {
+                if (existing.qty + 1 > variant.stock) {
+                    showToast(`Existencia máxima alcanzada (${variant.stock} un.)`, "error");
+                    return;
+                }
+                existing.qty++;
+                existing.total = existing.qty * existing.unitPrice;
+            } else {
+                posCart.push({
+                    productId: product.id,
+                    variantId: variant.id,
+                    name: `${product.name} (${variant.size} - ${variant.color})`,
+                    qty: 1,
+                    unitPrice: product.price,
+                    unitCost: product.cost,
+                    total: product.price
+                });
+            }
+
+            renderPOSCartList();
+        }
+
+        function renderPOSCartList() {
+            const list = document.getElementById('pos-cart-list');
+            if (!list) return;
+
+            if (posCart.length === 0) {
+                list.innerHTML = `<p class="text-center text-xs text-lyche-sub py-6">El carrito está vacío.</p>`;
+                updatePOSTotals();
+                return;
+            }
+
+            list.innerHTML = posCart.map((item, idx) => `
+                <div class="flex items-center justify-between py-2 text-xs">
+                    <div>
+                        <p class="font-bold text-lyche-dark line-clamp-1">${item.name}</p>
+                        <p class="text-[10px] text-lyche-sub">${formatCOP(item.unitPrice)} x ${item.qty}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-lyche-dark">${formatCOP(item.total)}</span>
+                        <button onclick="removePOSCartItem(${idx})" class="text-lyche-red p-1"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            updatePOSTotals();
+        }
+
+        function removePOSCartItem(idx) {
+            posCart.splice(idx, 1);
+            renderPOSCartList();
+        }
+
+        function clearPOSCart() {
+            posCart = [];
+            renderPOSCartList();
+        }
+
+        function updatePOSTotals() {
+            const sub = posCart.reduce((s, i) => s + i.total, 0);
+            const discountInput = document.getElementById('pos-discount');
+            const desc = parseFloat(discountInput ? discountInput.value : 0) || 0;
+            const tot = Math.max(0, sub - desc);
+
+            const subEl = document.getElementById('pos-subtotal');
+            const totEl = document.getElementById('pos-total');
+            if (subEl) subEl.innerText = formatCOP(sub);
+            if (totEl) totEl.innerText = formatCOP(tot);
+        }
+
+        function confirmSaleProcess() {
+            if (posCart.length === 0) {
+                showToast("El carrito está vacío", "error");
+                return;
+            }
+
+            const customerId = document.getElementById('pos-customer').value || null;
+            const paymentMethod = document.getElementById('pos-method').value;
+            const discount = parseFloat(document.getElementById('pos-discount').value) || 0;
+
+            const subtotal = posCart.reduce((s, i) => s + i.total, 0);
+            const total = Math.max(0, subtotal - discount);
+            const totalCost = posCart.reduce((s, i) => s + (i.unitCost * i.qty), 0);
+            const profit = total - totalCost;
+
+            const isCredit = paymentMethod === 'Crédito/Abono';
+            const paidAmount = isCredit ? 0 : total;
+            const balance = isCredit ? total : 0;
+
+            const consecutive = 2000 + DB.data.sales.length + 1;
+            const newSale = {
+                id: 'VEN-' + Date.now(),
+                consecutive,
+                date: new Date().toISOString(),
+                customerId,
+                items: JSON.parse(JSON.stringify(posCart)),
+                subtotal, discount, total, totalCost, profit,
+                paymentMethod,
+                paymentStatus: isCredit ? 'CREDITO' : 'PAGADO',
+                paidAmount, balance,
+                notes: 'Venta procesada en POS'
+            };
+
+            // Deduct stock
+            posCart.forEach(item => {
+                const prod = DB.data.products.find(p => p.id === item.productId);
+                if (prod) {
+                    const variant = prod.variants.find(v => v.id === item.variantId);
+                    if (variant) variant.stock = Math.max(0, variant.stock - item.qty);
+                }
+            });
+
+            // Update cash account
+            if (!isCredit) {
+                let accName = 'Caja Física Principal';
+                if (paymentMethod === 'Nequi') accName = 'Nequi Lyche Beautywear';
+                else if (paymentMethod === 'Bancolombia') accName = 'Bancolombia Empresarial';
+                else if (paymentMethod === 'Daviplata') accName = 'Daviplata Boutique';
+
+                const acc = DB.data.accounts.find(a => a.name === accName);
+                if (acc) acc.balance += total;
+            }
+
+            DB.data.sales.push(newSale);
+            DB.save();
+
+            showToast(`Venta #${consecutive} registrada con éxito`, "success");
+            printThermalReceipt(newSale);
+
+            posCart = [];
+            renderPOS(document.getElementById('main-content'));
+        }
+
+        function printThermalReceipt(sale) {
+            const area = document.getElementById('printable-receipt');
+            area.innerHTML = `
+                <div style="text-align:center; margin-bottom:8px;">
+                    <h2 style="font-weight:bold; font-size:14px;">LYCHE BEAUTYWEAR</h2>
+                    <p>NIT: 901.888.777-2</p>
+                    <p>Medellín, Colombia</p>
+                    <p>Fecha: ${formatDate(sale.date)}</p>
+                    <p style="font-weight:bold;">RECIBO DE VENTA #${sale.consecutive}</p>
+                </div>
+                <hr style="border-top:1px dashed black; margin:4px 0;">
+                <div>
+                    ${sale.items.map(i => `
+                        <div style="display:flex; justify-space-between;">
+                            <span>${i.qty}x ${i.name}</span>
+                            <span>${formatCOP(i.total)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <hr style="border-top:1px dashed black; margin:4px 0;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>TOTAL PAGADO:</span><span>${formatCOP(sale.total)}</span>
+                </div>
+                <p style="margin-top:4px;">Método: ${sale.paymentMethod}</p>
+                <div style="text-align:center; margin-top:12px;">
+                    <p>¡Gracias por elegir Lyche Beautywear!</p>
+                </div>
+            `;
+            window.print();
+        }
+
+        /* ==========================================================================
+           MODULE 4 & 5: CUSTOMERS (CXC) & SUPPLIERS (CXP)
+           ========================================================================== */
+        function renderCustomersCXC(container) {
+            const creditSales = DB.data.sales.filter(s => s.balance > 0);
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-lyche-border">
+                    <div>
+                        <h3 class="font-bold text-lyche-dark text-sm">Directorio de Clientes & Cartera (CXC)</h3>
+                        <p class="text-xs text-lyche-sub">Cuentas pendientes por cobrar e historial</p>
+                    </div>
+                    <button onclick="openCustomerModal()" class="bg-lyche-main text-white px-3 py-2 rounded-xl text-xs font-bold">+ Nuevo Cliente</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Customers List -->
+                    <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                        <div class="p-3 bg-lyche-soft border-b font-bold text-xs">Directorio de Clientes</div>
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-lyche-soft/50 text-lyche-sub">
+                                <tr>
+                                    <th class="p-2.5">Cliente</th>
+                                    <th class="p-2.5">Teléfono</th>
+                                    <th class="p-2.5 text-right">Saldo Deuda</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-lyche-border">
+                                ${DB.data.customers.map(c => {
+                                    const totalDebt = DB.data.sales.filter(s => s.customerId === c.id).reduce((sum, s) => sum + (s.balance || 0), 0);
+                                    return `
+                                        <tr>
+                                            <td class="p-2.5 font-bold">${c.name}</td>
+                                            <td class="p-2.5 text-lyche-sub">${c.phone}</td>
+                                            <td class="p-2.5 text-right font-bold ${totalDebt > 0 ? 'text-lyche-red' : 'text-emerald-700'}">${formatCOP(totalDebt)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pending Accounts Receivable (CXC) -->
+                    <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                        <div class="p-3 bg-lyche-soft border-b font-bold text-xs">Cuentas por Cobrar Pendientes</div>
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-lyche-soft/50 text-lyche-sub">
+                                <tr>
+                                    <th class="p-2.5">Venta #</th>
+                                    <th class="p-2.5">Saldo</th>
+                                    <th class="p-2.5 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-lyche-border">
+                                ${creditSales.length === 0 ? '<tr><td colspan="3" class="p-4 text-center text-lyche-sub">Sin deudas pendientes</td></tr>' : ''}
+                                ${creditSales.map(s => `
+                                    <tr>
+                                        <td class="p-2.5 font-bold">#${s.consecutive}</td>
+                                        <td class="p-2.5 font-bold text-lyche-red">${formatCOP(s.balance)}</td>
+                                        <td class="p-2.5 text-right">
+                                            <button onclick="openAbonoModal('${s.id}')" class="bg-lyche-main text-white px-2 py-1 rounded-lg text-[10px] font-bold">Abonar</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openAbonoModal(saleId) {
+            const sale = DB.data.sales.find(s => s.id === saleId);
+            if (!sale) return;
+
+            openModal(`Registrar Abono - Venta #${sale.consecutive}`, `
+                <form onsubmit="saveAbono(event, '${sale.id}')" class="space-y-3 text-xs">
+                    <p class="text-lyche-sub">Saldo Pendiente: <strong class="text-lyche-red">${formatCOP(sale.balance)}</strong></p>
+                    <div>
+                        <label class="block font-bold mb-1">Monto Abono (COP) *</label>
+                        <input type="number" id="abono-amt" max="${sale.balance}" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Cuenta Destino *</label>
+                        <select id="abono-acc" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                            ${DB.data.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" onclick="closeModal()" class="px-3 py-1.5 border rounded-xl">Cancelar</button>
+                        <button type="submit" class="px-3 py-1.5 bg-lyche-main text-white font-bold rounded-xl">Guardar Abono</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveAbono(e, saleId) {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('abono-amt').value) || 0;
+            const accId = document.getElementById('abono-acc').value;
+
+            const sale = DB.data.sales.find(s => s.id === saleId);
+            if (sale) {
+                sale.paidAmount += amt;
+                sale.balance = Math.max(0, sale.total - sale.paidAmount);
+                if (sale.balance === 0) sale.paymentStatus = 'PAGADO';
+
+                const acc = DB.data.accounts.find(a => a.id === accId);
+                if (acc) acc.balance += amt;
+
+                DB.save();
+                closeModal();
+                showToast("Abono guardado", "success");
+                renderCustomersCXC(document.getElementById('main-content'));
+            }
+        }
+
+        function openCustomerModal() {
+            openModal("Registrar Nuevo Cliente", `
+                <form onsubmit="saveCustomer(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold mb-1">Nombre Completo *</label>
+                        <input type="text" id="c-name" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Teléfono / WhatsApp *</label>
+                        <input type="text" id="c-phone" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" onclick="closeModal()" class="px-3 py-1.5 border rounded-xl">Cancelar</button>
+                        <button type="submit" class="px-3 py-1.5 bg-lyche-main text-white font-bold rounded-xl">Guardar</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveCustomer(e) {
+            e.preventDefault();
+            DB.data.customers.push({
+                id: 'CLI-' + Date.now(),
+                name: document.getElementById('c-name').value,
+                phone: document.getElementById('c-phone').value
+            });
+            DB.save();
+            closeModal();
+            showToast("Cliente registrado", "success");
+            renderCustomersCXC(document.getElementById('main-content'));
+        }
+
+        function renderSuppliersCXP(container) {
+            container.innerHTML = `
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-lyche-border">
+                    <h3 class="font-bold text-lyche-dark text-sm">Proveedores Textiles & CXP</h3>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border text-lyche-sub font-semibold">
+                            <tr>
+                                <th class="p-3">Proveedor</th>
+                                <th class="p-3">NIT</th>
+                                <th class="p-3">Contacto</th>
+                                <th class="p-3">Teléfono</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.suppliers.map(s => `
+                                <tr>
+                                    <td class="p-3 font-bold">${s.name}</td>
+                                    <td class="p-3 text-lyche-sub">${s.nit}</td>
+                                    <td class="p-3">${s.contact}</td>
+                                    <td class="p-3">${s.phone}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        /* ==========================================================================
+           MODULE 6, 7 & 8: PURCHASES, EXPENSES & CASH/BANKS
+           ========================================================================== */
+        function renderPurchases(container) {
+            container.innerHTML = `
+                <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                    <h3 class="font-bold text-lyche-dark text-sm">Compras & Recepción de Mercancía</h3>
+                    <p class="text-xs text-lyche-sub">Historial de órdenes e ingreso de inventario</p>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border">
+                            <tr>
+                                <th class="p-3">Doc Ref</th>
+                                <th class="p-3">Fecha</th>
+                                <th class="p-3">Total Compra</th>
+                                <th class="p-3">Saldo Deuda</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.purchases.map(p => `
+                                <tr>
+                                    <td class="p-3 font-mono font-bold">${p.docRef}</td>
+                                    <td class="p-3 text-lyche-sub">${formatDate(p.date)}</td>
+                                    <td class="p-3">${formatCOP(p.total)}</td>
+                                    <td class="p-3 font-bold text-lyche-red">${formatCOP(p.balance)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderExpenses(container) {
+            container.innerHTML = `
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-lyche-border">
+                    <h3 class="font-bold text-lyche-dark text-sm">Gastos Operativos de la Boutique</h3>
+                    <button onclick="openExpenseModal()" class="bg-lyche-main text-white px-3 py-2 rounded-xl text-xs font-bold">+ Registrar Gasto</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border">
+                            <tr>
+                                <th class="p-3">Fecha</th>
+                                <th class="p-3">Categoría</th>
+                                <th class="p-3">Descripción</th>
+                                <th class="p-3 text-right">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.expenses.map(e => `
+                                <tr>
+                                    <td class="p-3 text-lyche-sub">${formatDate(e.date)}</td>
+                                    <td class="p-3 font-bold"><span class="px-2 py-0.5 rounded bg-rose-50 text-lyche-red">${e.category}</span></td>
+                                    <td class="p-3">${e.description}</td>
+                                    <td class="p-3 text-right font-bold text-lyche-red">${formatCOP(e.amount)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function openExpenseModal() {
+            openModal("Registrar Gasto Operativo", `
+                <form onsubmit="saveExpense(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold mb-1">Categoría *</label>
+                        <select id="e-cat" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                            <option value="Arriendo">Arriendo Local</option>
+                            <option value="Servicios">Servicios Públicos</option>
+                            <option value="Empaques">Empaques & Bolsas</option>
+                            <option value="Publicidad">Publicidad & Redes</option>
+                            <option value="Otros">Otros Gastos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Descripción *</label>
+                        <input type="text" id="e-desc" required placeholder="Ej. Pago servicio de luz" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Monto (COP) *</label>
+                        <input type="number" id="e-amt" required min="1" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Cuenta Origen *</label>
+                        <select id="e-acc" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                            ${DB.data.accounts.map(a => `<option value="${a.id}">${a.name} (${formatCOP(a.balance)})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" onclick="closeModal()" class="px-3 py-1.5 border rounded-xl">Cancelar</button>
+                        <button type="submit" class="px-3 py-1.5 bg-lyche-main text-white font-bold rounded-xl">Guardar Gasto</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('e-amt').value) || 0;
+            const accId = document.getElementById('e-acc').value;
+
+            const acc = DB.data.accounts.find(a => a.id === accId);
+            if (acc) {
+                if (acc.balance < amt) {
+                    showToast("Saldo insuficiente en la cuenta", "error");
+                    return;
+                }
+                acc.balance -= amt;
+            }
+
+            DB.data.expenses.push({
+                id: 'GAS-' + Date.now(),
+                category: document.getElementById('e-cat').value,
+                description: document.getElementById('e-desc').value,
+                amount: amt,
+                date: new Date().toISOString(),
+                accountId: accId
+            });
+
+            DB.save();
+            closeModal();
+            showToast("Gasto registrado", "success");
+            renderExpenses(document.getElementById('main-content'));
+        }
+
+        function renderBanks(container) {
+            container.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    ${DB.data.accounts.map(a => `
+                        <div class="bg-white p-4 rounded-2xl border border-lyche-border shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase text-lyche-sub">${a.type}</span>
+                                <h4 class="font-bold text-lyche-dark text-xs mt-0.5">${a.name}</h4>
+                                <p class="text-base font-extrabold text-lyche-dark mt-2">${formatCOP(a.balance)}</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-lyche-soft flex items-center justify-center text-lyche-main text-base">
+                                <i class="fa-solid fa-building-columns"></i>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        /* ==========================================================================
+           MODULE 9, 10 & 11: POCKETS, CASHFLOW & SUPABASE ADMIN
+           ========================================================================== */
+        function renderPockets(container) {
+            const totalInAccs = DB.data.accounts.reduce((s, a) => s + a.balance, 0);
+            const totalReserved = DB.data.pockets.reduce((s, p) => s + p.balance, 0);
+            const totalFree = Math.max(0, totalInAccs - totalReserved);
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                        <span class="text-xs text-lyche-sub">Total en Cuentas</span>
+                        <h3 class="text-lg font-bold text-lyche-dark mt-1">${formatCOP(totalInAccs)}</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                        <span class="text-xs text-lyche-sub">Reservado en Bolsillos</span>
+                        <h3 class="text-lg font-bold text-lyche-main mt-1">${formatCOP(totalReserved)}</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                        <span class="text-xs text-lyche-sub">Dinero Libre Disponible</span>
+                        <h3 class="text-lg font-bold text-emerald-700 mt-1">${formatCOP(totalFree)}</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${DB.data.pockets.map(p => `
+                        <div class="bg-white p-5 rounded-2xl border border-lyche-border space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-lyche-dark text-xs">${p.name}</h4>
+                                <i class="fa-solid fa-piggy-bank text-lyche-main text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-lyche-sub">Saldo:</span>
+                                    <span class="font-bold">${formatCOP(p.balance)}</span>
+                                </div>
+                                <div class="w-full bg-lyche-soft h-2 rounded-full overflow-hidden">
+                                    <div class="bg-lyche-main h-full" style="width:${Math.min(100, (p.balance/p.target)*100)}%"></div>
+                                </div>
+                                <span class="text-[10px] text-lyche-sub block mt-1">Meta: ${formatCOP(p.target)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderCashFlowReports(container) {
+            container.innerHTML = `
+                <div class="bg-white p-5 rounded-2xl border border-lyche-border space-y-4">
+                    <h3 class="font-bold text-lyche-dark text-sm">Flujo de Caja & Exportación de Reportes</h3>
+                    <div class="p-5 bg-lyche-soft rounded-xl text-center space-y-2">
+                        <p class="text-xs text-lyche-sub uppercase font-bold">Flujo Neto Estimado</p>
+                        <h2 class="text-2xl font-extrabold text-emerald-700">${formatCOP(DB.data.sales.reduce((s, x) => s + x.paidAmount, 0) - DB.data.expenses.reduce((s, x) => s + x.amount, 0))}</h2>
+                        <span class="text-xs text-lyche-sub">Entradas Efectivas - Gastos Pagados</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <button onclick="exportInventoryCSV()" class="p-4 border rounded-xl bg-lyche-soft text-left hover:bg-lyche-light transition">
+                            <h4 class="font-bold text-xs text-lyche-dark"><i class="fa-solid fa-file-csv text-lyche-main mr-1"></i> Exportar Inventario CSV</h4>
+                            <p class="text-[11px] text-lyche-sub mt-1">Descarga completa de variantes y existencias.</p>
+                        </button>
+                        <button onclick="showToast('Reporte generado en pantalla', 'info')" class="p-4 border rounded-xl bg-lyche-soft text-left hover:bg-lyche-light transition">
+                            <h4 class="font-bold text-xs text-lyche-dark"><i class="fa-solid fa-file-invoice text-lyche-main mr-1"></i> Exportar Ventas & Cartera</h4>
+                            <p class="text-[11px] text-lyche-sub mt-1">Consolidado comercial de la boutique.</p>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSupabaseAdmin(container) {
+            const sqlDdl = `-- SCRIPT POSTGRESQL / SUPABASE SCHEMA
+-- Sistema de Gestión Lyche Beautywear
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    role TEXT DEFAULT 'admin',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ref VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    brand VARCHAR(100) DEFAULT 'Lyche Beautywear',
+    cost NUMERIC(12,2) DEFAULT 0,
+    price NUMERIC(12,2) DEFAULT 0,
+    min_stock INT DEFAULT 3,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.product_variants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    size VARCHAR(20) NOT NULL,
+    color VARCHAR(50) NOT NULL,
+    stock INT DEFAULT 0,
+    cost NUMERIC(12,2) NOT NULL,
+    price NUMERIC(12,2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.sales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    consecutive SERIAL,
+    date TIMESTAMPTZ DEFAULT NOW(),
+    customer_id UUID REFERENCES public.customers(id),
+    total NUMERIC(12,2) NOT NULL,
+    profit NUMERIC(12,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    payment_status VARCHAR(20) NOT NULL
+);
+
+-- RLS Security Policies
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Lectura para usuarios autenticados" ON public.products FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Escritura para usuarios autenticados" ON public.products FOR ALL USING (auth.role() = 'authenticated');
+`;
+
+            container.innerHTML = `
+                <div class="bg-white p-5 rounded-2xl border border-lyche-border space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-lyche-dark text-base">Supabase Cloud & Script SQL PostgreSQL</h3>
+                            <p class="text-xs text-lyche-sub">URL: <span class="font-mono text-lyche-main">${SUPABASE_URL}</span></p>
+                        </div>
+                        <button onclick="copySQLText()" class="bg-lyche-main text-white px-3 py-1.5 rounded-xl text-xs font-bold">Copiar SQL</button>
+                    </div>
+
+                    <div class="p-4 bg-lyche-soft rounded-xl text-xs space-y-2 text-lyche-dark">
+                        <p class="font-bold">Pasos de instalación en tu proyecto Supabase:</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-lyche-sub">
+                            <li>Abre la consola en <a href="${SUPABASE_URL}" target="_blank" class="text-lyche-main underline font-bold">Supabase Dashboard</a>.</li>
+                            <li>Ingresa a la sección <strong>SQL Editor</strong>.</li>
+                            <li>Pega el código SQL inferior y haz clic en <strong>RUN</strong> para crear las tablas y políticas de seguridad RLS.</li>
+                        </ol>
+                    </div>
+
+                    <textarea id="sql-area" readonly class="w-full h-64 p-3 bg-slate-900 text-pink-200 font-mono text-xs rounded-xl focus:outline-none">${sqlDdl}</textarea>
+                </div>
+            `;
+        }
+
+        function copySQLText() {
+            const txt = document.getElementById('sql-area');
+            txt.select();
+            document.execCommand('copy');
+            showToast("Script SQL copiado al portapapeles", "success");
+        }
+
+        /* ==========================================================================
+           AUTHENTICATION MODAL
+           ========================================================================== */
+        function openAuthModal() {
+            openModal("Autenticación Supabase Cloud", `
+                <form onsubmit="handleAuthSubmit(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold mb-1">Correo Electrónico *</label>
+                        <input type="email" id="auth-email" required placeholder="admin@lychebeautywear.com" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Contraseña *</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••" class="w-full p-2 border rounded-xl bg-lyche-soft">
+                    </div>
+                    <div class="flex items-center justify-between pt-2">
+                        <button type="button" onclick="handleAuthSignUp()" class="text-lyche-main font-bold underline">Crear Cuenta</button>
+                        <button type="submit" class="px-4 py-2 bg-lyche-main text-white font-bold rounded-xl">Iniciar Sesión</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) {
+                    showToast("Error de autenticación: " + error.message, "error");
+                } else {
+                    currentUser = data.user;
+                    appMode = 'supabase';
+                    updateConnectionBadge();
+                    closeModal();
+                    showToast("Sesión iniciada correctamente en Supabase Cloud", "success");
+                    renderCurrentTab();
+                }
+            } else {
+                showToast("SDK de Supabase no disponible. Usando Modo Demo.", "error");
+            }
+        }
+
+        async function handleAuthSignUp() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (supabaseClient && email && password) {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) {
+                    showToast("Error al registrar: " + error.message, "error");
+                } else {
+                    showToast("Usuario registrado. Por favor inicia sesión.", "success");
+                }
+            } else {
+                showToast("Proporciona correo y contraseña", "error");
+            }
+        }
+
+        // 6. INITIALIZATION ON LOAD
+        window.onload = function() {
+            // Live clock in Bogota timezone
+            setInterval(() => {
+                const now = new Date();
+                const str = now.toLocaleDateString('es-CO', {
+                    timeZone: 'America/Bogota',
+                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+                const el = document.getElementById('current-datetime');
+                if (el) el.innerText = 'Colombia (Bogotá): ' + str;
+            }, 1000);
+
+            // Listen for Supabase session state
+            if (supabaseClient) {
+                supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                    if (session) {
+                        currentUser = session.user;
+                        appMode = 'supabase';
+                        updateConnectionBadge();
+                    }
+                });
+            }
+
+            renderCurrentTab();
+        };
+    </script>
+</body>
+</html>
