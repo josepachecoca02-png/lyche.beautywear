@@ -467,6 +467,18 @@
                     </div>
                 </div>
 
+                <!-- GRÁFICAS RESTAURADAS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                        <h3 class="text-xs font-bold text-lyche-dark mb-3">Ingresos vs Gastos Operativos</h3>
+                        <div class="relative h-48 w-full"><canvas id="chart-finances"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-lyche-border">
+                        <h3 class="text-xs font-bold text-lyche-dark mb-3">Distribución de Inventario (Prendas)</h3>
+                        <div class="relative h-48 w-full"><canvas id="chart-inventory"></canvas></div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div class="bg-white p-4 rounded-xl border border-lyche-border">
                         <p class="text-[11px] font-bold text-lyche-sub">Caja Física (Efectivo)</p>
@@ -482,6 +494,46 @@
                     </div>
                 </div>
             `;
+
+            // Inicializar las gráficas de Chart.js
+            setTimeout(() => {
+                const ctxFin = document.getElementById('chart-finances');
+                const ctxInv = document.getElementById('chart-inventory');
+                
+                if(ctxFin) {
+                    chartInstances['fin'] = new Chart(ctxFin, {
+                        type: 'bar',
+                        data: { 
+                            labels: ['Balance Actual'], 
+                            datasets: [
+                                { label: 'Ventas Positivas', data: [salesMonth], backgroundColor: '#54836A' }, 
+                                { label: 'Gastos', data: [totalExpenses], backgroundColor: '#B85C66' }
+                            ] 
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+                    });
+                }
+
+                if(ctxInv) {
+                    const cats = {};
+                    DB.data.products.forEach(p => {
+                        const count = p.variants.reduce((s, v) => s + v.stock, 0);
+                        if(count > 0) cats[p.name] = (cats[p.name] || 0) + count; 
+                    });
+                    
+                    chartInstances['inv'] = new Chart(ctxInv, {
+                        type: 'doughnut',
+                        data: { 
+                            labels: Object.keys(cats).length ? Object.keys(cats) : ['Sin Stock'], 
+                            datasets: [{ 
+                                data: Object.keys(cats).length ? Object.values(cats) : [1], 
+                                backgroundColor: ['#D8A0A8', '#F3E1E4', '#827477', '#3B3032'] 
+                            }] 
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } } }
+                    });
+                }
+            }, 100);
         }
 
         // ================= INVENTARIO =================
@@ -748,6 +800,215 @@
                 </div>
             `;
         }
+
+        // ================= CLIENTES Y CARTERA =================
+        function renderCustomers(container) {
+            container.innerHTML = `
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-lyche-border mb-4">
+                    <div>
+                        <h3 class="font-bold text-sm">Directorio de Clientes</h3>
+                        <p class="text-[10px] text-lyche-sub">Gestiona clientes y pagos de cartera (fiado).</p>
+                    </div>
+                    <button onclick="openNewCustomerModal()" class="bg-lyche-main text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">+ Nuevo Cliente</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border text-lyche-sub">
+                            <tr><th class="p-3">Nombre</th><th class="p-3">Teléfono</th><th class="p-3 text-right">Deuda Pendiente</th><th class="p-3 text-right">Acción</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.customers.length === 0 ? '<tr><td colspan="4" class="p-8 text-center text-lyche-sub">No hay clientes registrados.</td></tr>' : ''}
+                            ${DB.data.customers.map(c => `
+                                <tr>
+                                    <td class="p-3 font-bold">${c.name}</td>
+                                    <td class="p-3">${c.phone || '-'}</td>
+                                    <td class="p-3 text-right font-bold ${c.balance > 0 ? 'text-lyche-red' : 'text-emerald-600'}">${formatCOP(c.balance || 0)}</td>
+                                    <td class="p-3 text-right">
+                                        ${c.balance > 0 ? `<button onclick="openAbonoModal('${c.id}')" class="bg-lyche-light text-lyche-main font-bold px-3 py-1.5 rounded-lg border border-lyche-border hover:bg-lyche-soft">Recibir Abono</button>` : '<span class="text-[10px] text-lyche-sub">Al día</span>'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.openNewCustomerModal = () => {
+            openModal("Registrar Cliente", `
+                <form onsubmit="saveCustomer(event)" class="space-y-3 text-xs">
+                    <div><label class="block font-bold mb-1">Nombre Completo *</label><input type="text" id="c-name" required class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div><label class="block font-bold mb-1">Teléfono</label><input type="tel" id="c-phone" class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div class="flex justify-end pt-3"><button type="submit" class="px-4 py-2 bg-lyche-main text-white font-bold rounded-xl">Guardar</button></div>
+                </form>
+            `);
+        };
+
+        window.saveCustomer = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('c-name').value;
+            const phone = document.getElementById('c-phone').value;
+            DB.data.customers.push({ id: 'CLI-' + Date.now(), name, phone, balance: 0 });
+            DB.save(); closeModal(); showToast("Cliente registrado", "success"); renderCustomers(document.getElementById('main-content'));
+        };
+
+        window.openAbonoModal = (id) => {
+            const c = DB.data.customers.find(x => x.id === id);
+            openModal(`Registrar Abono - ${c.name}`, `
+                <form onsubmit="saveAbono(event, '${id}')" class="space-y-3 text-xs">
+                    <p class="text-lyche-red font-bold text-center mb-4">Deuda Actual: ${formatCOP(c.balance)}</p>
+                    <div><label class="block font-bold mb-1">Monto a Abonar (COP) *</label><input type="number" id="a-amount" required max="${c.balance}" class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div>
+                        <label class="block font-bold mb-1">Cuenta a donde ingresa el dinero *</label>
+                        <select id="a-account" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                            <option value="ACC-CAJA">Caja Física (Efectivo)</option>
+                            <option value="ACC-BANCO">Bancolombia</option>
+                            <option value="ACC-NEQUI">Nequi</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-3"><button type="submit" class="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl">Confirmar Abono</button></div>
+                </form>
+            `);
+        };
+
+        window.saveAbono = (e, id) => {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('a-amount').value);
+            const accId = document.getElementById('a-account').value;
+            const c = DB.data.customers.find(x => x.id === id);
+            const acc = DB.data.accounts.find(a => a.id === accId);
+            
+            c.balance -= amt;
+            acc.balance += amt;
+            recordLedgerMovement('INGRESO', `Abono de Cartera: ${c.name}`, acc.id, amt, 'ABONO');
+            
+            DB.save(); closeModal(); showToast("Abono recibido correctamente", "success"); renderCustomers(document.getElementById('main-content'));
+        };
+
+        // ================= PROVEEDORES =================
+        function renderSuppliers(container) {
+            container.innerHTML = `
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-lyche-border mb-4">
+                    <div>
+                        <h3 class="font-bold text-sm">Directorio de Proveedores</h3>
+                        <p class="text-[10px] text-lyche-sub">Administra las marcas o fabricantes que te surten.</p>
+                    </div>
+                    <button onclick="openNewSupplierModal()" class="bg-lyche-main text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">+ Nuevo Proveedor</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border text-lyche-sub">
+                            <tr><th class="p-3">Nombre Comercial</th><th class="p-3">Teléfono / Contacto</th><th class="p-3 text-right">Acción</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.suppliers.length === 0 ? '<tr><td colspan="3" class="p-8 text-center text-lyche-sub">No hay proveedores registrados.</td></tr>' : ''}
+                            ${DB.data.suppliers.map(s => `
+                                <tr>
+                                    <td class="p-3 font-bold">${s.name}</td>
+                                    <td class="p-3">${s.phone || '-'}</td>
+                                    <td class="p-3 text-right">
+                                        <button onclick="deleteSupplier('${s.id}')" class="text-lyche-red p-1"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.openNewSupplierModal = () => {
+            openModal("Registrar Proveedor", `
+                <form onsubmit="saveSupplier(event)" class="space-y-3 text-xs">
+                    <div><label class="block font-bold mb-1">Nombre o Empresa *</label><input type="text" id="s-name" required class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div><label class="block font-bold mb-1">Teléfono</label><input type="tel" id="s-phone" class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div class="flex justify-end pt-3"><button type="submit" class="px-4 py-2 bg-lyche-main text-white font-bold rounded-xl">Guardar</button></div>
+                </form>
+            `);
+        };
+
+        window.saveSupplier = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('s-name').value;
+            const phone = document.getElementById('s-phone').value;
+            DB.data.suppliers.push({ id: 'PRV-' + Date.now(), name, phone });
+            DB.save(); closeModal(); showToast("Proveedor registrado", "success"); renderSuppliers(document.getElementById('main-content'));
+        };
+
+        window.deleteSupplier = (id) => {
+            if(confirm("¿Eliminar este proveedor del directorio?")) {
+                DB.data.suppliers = DB.data.suppliers.filter(x => x.id !== id);
+                DB.save(); renderSuppliers(document.getElementById('main-content'));
+            }
+        };
+
+        // ================= GASTOS OPERATIVOS =================
+        function renderExpenses(container) {
+            container.innerHTML = `
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-lyche-border mb-4">
+                    <div>
+                        <h3 class="font-bold text-sm">Registro de Gastos</h3>
+                        <p class="text-[10px] text-lyche-sub">Controla pagos como arriendos, recibos, envíos, etc.</p>
+                    </div>
+                    <button onclick="openNewExpenseModal()" class="bg-lyche-main text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">+ Registrar Gasto</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-lyche-border overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-lyche-soft border-b border-lyche-border text-lyche-sub">
+                            <tr><th class="p-3">Fecha</th><th class="p-3">Concepto</th><th class="p-3">Cuenta de Pago</th><th class="p-3 text-right">Valor Pagado</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-lyche-border">
+                            ${DB.data.expenses.length === 0 ? '<tr><td colspan="4" class="p-8 text-center text-lyche-sub">No hay gastos registrados.</td></tr>' : ''}
+                            ${DB.data.expenses.map(e => `
+                                <tr>
+                                    <td class="p-3">${formatDate(e.date)}</td>
+                                    <td class="p-3 font-bold">${e.description}</td>
+                                    <td class="p-3"><span class="bg-lyche-light px-2 py-1 rounded text-[10px] text-lyche-dark">${e.accountName}</span></td>
+                                    <td class="p-3 text-right font-bold text-lyche-red">-${formatCOP(e.amount)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.openNewExpenseModal = () => {
+            openModal("Registrar Gasto Operativo", `
+                <form onsubmit="saveExpense(event)" class="space-y-3 text-xs">
+                    <div><label class="block font-bold mb-1">Concepto / Descripción *</label><input type="text" id="e-desc" required placeholder="Ej: Pago Arriendo Noviembre" class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div><label class="block font-bold mb-1">Valor a descontar (COP) *</label><input type="number" id="e-amount" required class="w-full p-2 border rounded-xl bg-lyche-soft"></div>
+                    <div>
+                        <label class="block font-bold mb-1">Cuenta de donde sale el dinero *</label>
+                        <select id="e-account" required class="w-full p-2 border rounded-xl bg-lyche-soft">
+                            <option value="ACC-CAJA">Caja Física (Efectivo)</option>
+                            <option value="ACC-BANCO">Bancolombia</option>
+                            <option value="ACC-NEQUI">Nequi</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end pt-3"><button type="submit" class="px-4 py-2 bg-lyche-red text-white font-bold rounded-xl">Registrar Salida de Dinero</button></div>
+                </form>
+            `);
+        };
+
+        window.saveExpense = (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('e-desc').value;
+            const amt = parseFloat(document.getElementById('e-amount').value);
+            const accId = document.getElementById('e-account').value;
+            
+            const acc = DB.data.accounts.find(a => a.id === accId);
+            if(acc.balance < amt) {
+                if(!confirm("Advertencia: Esta cuenta no tiene fondos suficientes. Quedará en negativo. ¿Continuar de todas formas?")) return;
+            }
+
+            acc.balance -= amt;
+            DB.data.expenses.push({ id: 'EXP-' + Date.now(), date: new Date().toISOString(), description: desc, amount: amt, accountId: acc.id, accountName: acc.name });
+            recordLedgerMovement('EGRESO', `Gasto Operativo: ${desc}`, acc.id, amt, 'GASTO');
+            
+            DB.save(); closeModal(); showToast("Gasto descontado de la cuenta", "success"); renderExpenses(document.getElementById('main-content'));
+        };
+
 
         // ================= AUTHENTICATION (BÓVEDA) =================
         async function checkAuthStatus() {
