@@ -284,34 +284,69 @@
 
         class Store {
             constructor() {
-                this.load();
+                this.loadLocal();
             }
-            load() {
+            
+            loadLocal() {
                 const stored = localStorage.getItem('lyche_private_db');
                 if (stored) {
                     try {
                         this.data = JSON.parse(stored);
-                        // Asegurar integridad estructural si se borra algo accidentalmente
-                        if (!this.data.products) this.data.products = [];
-                        if (!this.data.customers) this.data.customers = [];
-                        if (!this.data.suppliers) this.data.suppliers = [];
-                        if (!this.data.sales) this.data.sales = [];
-                        if (!this.data.expenses) this.data.expenses = [];
-                        if (!this.data.ledger) this.data.ledger = [];
-                        if (!this.data.accounts || this.data.accounts.length === 0) {
-                            this.data.accounts = JSON.parse(JSON.stringify(INITIAL_CLEAN_DATA.accounts));
-                        }
+                        this.ensureStructure();
                     } catch (e) {
                         this.data = JSON.parse(JSON.stringify(INITIAL_CLEAN_DATA));
-                        this.save();
                     }
                 } else {
                     this.data = JSON.parse(JSON.stringify(INITIAL_CLEAN_DATA));
-                    this.save();
                 }
             }
+
+            ensureStructure() {
+                if (!this.data.products) this.data.products = [];
+                if (!this.data.customers) this.data.customers = [];
+                if (!this.data.suppliers) this.data.suppliers = [];
+                if (!this.data.sales) this.data.sales = [];
+                if (!this.data.expenses) this.data.expenses = [];
+                if (!this.data.ledger) this.data.ledger = [];
+                if (!this.data.accounts || this.data.accounts.length === 0) {
+                    this.data.accounts = JSON.parse(JSON.stringify(INITIAL_CLEAN_DATA.accounts));
+                }
+            }
+
+            async syncFromCloud() {
+                if (!supabaseApp) return;
+                try {
+                    // Intenta descargar la base de datos desde Supabase
+                    const { data, error } = await supabaseApp.from('lyche_db').select('state').eq('id', 1).maybeSingle();
+                    
+                    if (data && data.state) {
+                        // Si la nube TIENE datos, sobrescribimos lo del celular/PC con la nube (Sincronización)
+                        this.data = data.state;
+                        this.ensureStructure();
+                        localStorage.setItem('lyche_private_db', JSON.stringify(this.data));
+                    } else {
+                        // Si la nube NO TIENE datos (primera vez que abres el PC), subimos el inventario del PC a la nube
+                        await this.syncToCloud();
+                    }
+                } catch(e) {
+                    console.error("Error sincronizando desde la nube:", e);
+                }
+            }
+
             save() {
+                // 1. Guarda localmente instantáneo (para que la app no se trabe)
                 localStorage.setItem('lyche_private_db', JSON.stringify(this.data));
+                // 2. Dispara el guardado en la nube en segundo plano
+                this.syncToCloud();
+            }
+
+            async syncToCloud() {
+                if (!supabaseApp) return;
+                try {
+                    await supabaseApp.from('lyche_db').upsert({ id: 1, state: this.data });
+                } catch(e) {
+                    console.error("Error guardando en la nube:", e);
+                }
             }
         }
 
@@ -1171,7 +1206,18 @@
             }
             const { data: { session } } = await supabaseApp.auth.getSession();
             if (session) {
-                // Permitir acceso y mostrar UI
+                // 1. AVISO DE SINCRONIZACIÓN
+                const errEl = document.getElementById('auth-error');
+                if(errEl) {
+                    errEl.innerText = "Sincronizando información en la nube...";
+                    errEl.classList.remove('text-lyche-red', 'hidden');
+                    errEl.classList.add('text-lyche-dark');
+                }
+                
+                // 2. SINCRONIZAR DATOS CON SUPABASE ANTES DE MOSTRAR LA APP
+                await DB.syncFromCloud();
+                
+                // 3. PERMITIR ACCESO
                 document.getElementById('auth-screen').classList.add('opacity-0');
                 setTimeout(() => {
                     document.getElementById('auth-screen').classList.add('hidden');
